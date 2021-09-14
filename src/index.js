@@ -9,7 +9,7 @@ const settings = {
 const params = new URLSearchParams(document.location.search.substring(1));
 
 const numParam = (name, defaultValue) => {
-  const param = parseInt(params.get(name));
+  const param = parseFloat(params.get(name));
   return isNaN(param) ? defaultValue : param;
 };
 
