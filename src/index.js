@@ -15,11 +15,11 @@ const numParam = (name, defaultValue) => {
 
 const WIDTH = numParam("width", 200);
 const HEIGHT = numParam("height", 200);
-const INITIAL_POPULATION = 0.05;
-const MUTATION_CHANCE = 0.001; //0.01;
-const EPIDEMIC_CHANCE = 0.000001;
-const TRANSMISSION_CHANCE = 0.2;
-const VIRUS_STRENGTH = 20;
+const INITIAL_POPULATION = numParam("initialPopulation", 0.1);
+const MUTATION_CHANCE = numParam("mutationChance", 0.001);
+const EPIDEMIC_CHANCE = numParam("epidemicChance", 0.000001);
+const TRANSMISSION_CHANCE = numParam("transmissionChance", 0.2);
+const VIRUS_STRENGTH = numParam("virusStrength", 20);
 
 const MIN_NEIGHBORS = numParam("minNeighbors", 2);
 const MAX_NEIGHBORS = numParam("maxNeighbors", 4);
