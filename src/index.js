@@ -3,29 +3,14 @@ const Color = require("canvas-sketch-util/color");
 
 const settings = {
   animate: true,
-  fps: 5,
 };
 
 const params = new URLSearchParams(document.location.search.substring(1));
 
-const numParam = (name, defaultValue) => {
+function numParam(name, defaultValue) {
   const param = parseFloat(params.get(name));
   return isNaN(param) ? defaultValue : param;
-};
-
-const WIDTH = numParam("width", 200);
-const HEIGHT = numParam("height", 200);
-const INITIAL_POPULATION = numParam("initialPopulation", 0.1);
-const MUTATION_CHANCE = numParam("mutationChance", 0.001);
-const EPIDEMIC_CHANCE = numParam("epidemicChance", 0.000001);
-const TRANSMISSION_CHANCE = numParam("transmissionChance", 0.2);
-const VIRUS_STRENGTH = numParam("virusStrength", 20);
-
-const MIN_NEIGHBORS = numParam("minNeighbors", 2);
-const MAX_NEIGHBORS = numParam("maxNeighbors", 4);
-
-let data = new Int8Array(WIDTH * HEIGHT);
-let dataStep = new Int8Array(WIDTH * HEIGHT);
+}
 
 function swapDataArray() {
   const tmp = data;
@@ -33,84 +18,103 @@ function swapDataArray() {
   dataStep = tmp;
 }
 
+const WIDTH = numParam("width", 200);
+const HEIGHT = numParam("height", 200);
+
+let data = new Uint32Array(WIDTH * HEIGHT);
+// let dataStep = new Uint32Array(WIDTH * HEIGHT);
+
 function init() {
   for (let i = 0; i < WIDTH; i++) {
     for (let j = 0; j < HEIGHT; j++) {
-      data[i * WIDTH + j] = Math.random() < INITIAL_POPULATION ? 1 : 0;
+      data[i * WIDTH + j] = Math.floor(Math.random() * 256 * 256 * 256);
     }
   }
 }
 
-function mutate() {
-  for (let i = 0; i < WIDTH; i++) {
-    for (let j = 0; j < HEIGHT; j++) {
-      dataStep[i * WIDTH + j] =
-        Math.random() < EPIDEMIC_CHANCE
-          ? -VIRUS_STRENGTH
-          : Math.random() < MUTATION_CHANCE
-          ? 1
-          : data[i * WIDTH + j];
-    }
-  }
-  swapDataArray();
+// function copyArray(from, to) {
+//   for (let i = 0; i < from.length; i++) {
+//     to[i] = from[i];
+//   }
+// }
+
+function getRed(pixel) {
+  return (pixel >> 16) & 0xff;
 }
 
-function neighborsCount(i, j) {
-  return (
-    data[i * WIDTH + j + 1] +
-    data[i * WIDTH + j - 1] +
-    data[(i + 1) * WIDTH + j] +
-    data[(i - 1) * WIDTH + j] +
-    data[(i + 1) * WIDTH + j + 1] +
-    data[(i - 1) * WIDTH + j + 1] +
-    data[(i - 1) * WIDTH + j - 1] +
-    data[(i + 1) * WIDTH + j - 1]
-  );
+function getGreen(pixel) {
+  return (pixel >> 8) & 0xff;
+}
+
+function getBlue(pixel) {
+  return pixel & 0xff;
 }
 
 function step() {
-  for (let i = 0; i < WIDTH; i++) {
-    for (let j = 0; j < HEIGHT; j++) {
-      const neighbors = neighborsCount(i, j);
-      const alive = !!data[i * WIDTH + j];
-      dataStep[i * WIDTH + j] =
-        alive && neighbors >= MIN_NEIGHBORS && neighbors <= MAX_NEIGHBORS
-          ? 1
-          : !alive && neighbors === 3
-          ? 1
-          : neighbors < 0
-          ? Math.random() < TRANSMISSION_CHANCE
-            ? Math.max(-VIRUS_STRENGTH, neighbors)
-            : 0
-          : 0;
+  // copyArray(data, dataStep);
+  for (let iteration = 0; iteration < 1000; iteration++) {
+    // select random cell
+    const i = Math.floor(Math.random() * WIDTH);
+    const j = Math.floor(Math.random() * HEIGHT);
+
+    // currentPixel = data[i * WIDTH + j];
+
+    // for (let x = i - 1; x <= i + 1; x++) {
+    //   if (x < 0 || x >= WIDTH) continue;
+    //   for (let y = j - 1; y <= j + 1; y++) {
+    //     if (y < 0 || y >= HEIGHT) continue;
+    //     if (x === i && y === j) continue;
+    //     data[x * WIDTH + y] = currentPixel;
+    //   }
+    // }
+
+    // let count = 0;
+    const centralPixel = data[i * WIDTH + j];
+    for (x of [i - 1, i, i + 1]) {
+      if (x < 0 || x >= WIDTH) continue;
+      for (y of [j - 1, j, j + 1]) {
+        if (y < 0 || y >= HEIGHT) continue;
+        if (x === i && y === j) continue;
+        const pixel = data[x * WIDTH + y];
+
+        const red = Math.round((getRed(pixel) + getRed(centralPixel)) / 2);
+        const green = Math.round(
+          (getGreen(pixel) + getGreen(centralPixel)) / 2
+        );
+        const blue = Math.round((getBlue(pixel) + getBlue(centralPixel)) / 2);
+
+        data[i * WIDTH + j] = (red << 16) | (green << 8) | blue;
+      }
     }
+
+    // const red = Math.floor(reds / count);
+    // const green = Math.floor(greens / count);
+    // const blue = Math.floor(blues / count);
+
+    // data[i * WIDTH + j] = (red << 16) | (green << 8) | blue;
   }
-  swapDataArray();
+  // swapDataArray();
 }
 
 init();
 
-const sketch = () => {
+function getColorFromPixel(pixel) {
+  return `rgb(${getRed(pixel)}, ${getGreen(pixel)}, ${getBlue(pixel)})`;
+}
+
+function sketch() {
   return ({ context, width, height }) => {
     const xScale = width / WIDTH;
     const yScale = height / HEIGHT;
     for (let i = 0; i < WIDTH; i++) {
       for (let j = 0; j < HEIGHT; j++) {
         const pixel = data[i * WIDTH + j];
-        context.fillStyle =
-          pixel === 1
-            ? "black"
-            : pixel === 0
-            ? "white"
-            : Color.style({
-                hsl: [0, 100 + Math.floor((pixel / VIRUS_STRENGTH) * 50), 50],
-              });
+        context.fillStyle = getColorFromPixel(pixel);
         context.fillRect(i * xScale, j * yScale, 1 * xScale, 1 * yScale);
       }
     }
     step();
-    mutate();
   };
-};
+}
 
 canvasSketch(sketch, settings);
