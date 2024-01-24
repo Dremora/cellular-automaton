@@ -3,9 +3,11 @@ declare module 'canvas-sketch' {
     animate?: boolean;
     canvas?: HTMLCanvasElement;
     dimensions?: [number, number];
-    pixelated: boolean;
+    pixelated?: boolean;
+    totalFrames?: number;
+    duration?: number;
     resizeCanvas?: boolean;
-    scaleToFit: boolean;
+    scaleToFit?: boolean;
     scaleToView?: boolean;
   };
   type SketchFunctionProps = {
@@ -16,9 +18,18 @@ declare module 'canvas-sketch' {
     dimensions?: [number, number];
   };
   type SketchFunction = (props: SketchFunctionProps) => void;
+  type SketchManager = {
+    play: () => void;
+    stop: () => void;
+    pause: () => void;
+    update: (settings: Settings) => void;
+    unload: () => void;
+    destroy: () => void;
+    loadAndRun: (sketch: SketchFunction, settings: Settings) => void;
+  };
   const canvasSketch: (
     sketch: () => SketchFunction,
     settings: Settings
-  ) => void;
+  ) => Promise<SketchManager>;
   export default canvasSketch;
 }
