@@ -1,5 +1,13 @@
+import {
+  Checkbox,
+  InputWrapper,
+  Select,
+  Slider,
+  TextInput,
+} from '@mantine/core';
 import { Automation } from './automaton';
-import { randomInt } from './utils';
+import { grayscaleHueToRGB, randomInt } from './utils';
+import { useMemo, useState } from 'react';
 
 export type Operation = 'blur' | 'replace';
 
@@ -10,6 +18,7 @@ export class GradualBlur extends Automation {
   iterations: number;
   operation: Operation;
   monochrome: boolean;
+  hue: number;
 
   constructor({
     width,
@@ -17,12 +26,14 @@ export class GradualBlur extends Automation {
     iterations,
     operation,
     monochrome,
+    hue,
   }: {
     width: number;
     height: number;
     iterations: number;
     operation: Operation;
     monochrome: boolean;
+    hue: number;
   }) {
     super();
     this.width = width;
@@ -30,6 +41,7 @@ export class GradualBlur extends Automation {
     this.iterations = iterations;
     this.operation = operation;
     this.monochrome = monochrome;
+    this.hue = hue;
     this.data = new Uint8Array(this.width * this.height * (monochrome ? 1 : 3));
   }
 
@@ -88,11 +100,8 @@ export class GradualBlur extends Automation {
 
   override getColorFromPixel(x: number, y: number) {
     if (this.monochrome) {
-      return [
-        this.data[y * this.width + x],
-        this.data[y * this.width + x],
-        this.data[y * this.width + x],
-      ] satisfies [number, number, number];
+      const color = this.data[y * this.width + x];
+      return grayscaleHueToRGB(color, this.hue);
     } else {
       return [
         this.data[(y * this.width + x) * 3],
@@ -111,4 +120,85 @@ export class GradualBlur extends Automation {
       this.data[i] = randomInt(0, 255);
     }
   }
+}
+
+export function useConfig() {
+  const [width, setWidth] = useState(1000);
+  const [height, setHeight] = useState(1000);
+  const [iterations, setIterations] = useState(10000);
+  const [operation, setOperation] = useState<Operation>('replace');
+  const [monochrome, setMonochrome] = useState(false);
+  const [hue, setHue] = useState(0);
+  const node = useMemo(
+    () => (
+      <>
+        <TextInput
+          placeholder="200"
+          label="Width"
+          value={width}
+          type="number"
+          onChange={(e) => setWidth(+e.currentTarget.value)}
+        />
+        <TextInput
+          placeholder="200"
+          label="Height"
+          value={height}
+          type="number"
+          onChange={(e) => setHeight(+e.currentTarget.value)}
+        />
+        <TextInput
+          placeholder="100"
+          label="Iterations"
+          value={iterations}
+          type="number"
+          onChange={(e) => setIterations(+e.currentTarget.value)}
+        />
+        <InputWrapper label="Operation">
+          <Select
+            data={['blur', 'replace']}
+            value={operation}
+            onChange={(operation) => setOperation(operation as Operation)}
+          />
+        </InputWrapper>
+        <Checkbox
+          label="Monochrome"
+          checked={monochrome}
+          onChange={() => setMonochrome(!monochrome)}
+        />
+        {monochrome && (
+          <InputWrapper label="Hue">
+            <Slider
+              min={0}
+              max={359}
+              marks={[
+                { value: 0, label: 'Red' },
+                { value: 60, label: 'Yellow' },
+                { value: 120, label: 'Green' },
+                { value: 180, label: 'Cyan' },
+                { value: 240, label: 'Blue' },
+                { value: 300, label: 'Magenta' },
+                { value: 360, label: 'Red' },
+              ]}
+              value={hue}
+              onChange={setHue}
+            />
+          </InputWrapper>
+        )}
+      </>
+    ),
+    [width, height, iterations, operation, monochrome, hue]
+  );
+
+  const config = useMemo(() => {
+    return {
+      width,
+      height,
+      iterations,
+      operation,
+      monochrome,
+      hue,
+    };
+  }, [width, height, iterations, operation, monochrome, hue]);
+
+  return useMemo(() => ({ config, node }), [config, node]);
 }

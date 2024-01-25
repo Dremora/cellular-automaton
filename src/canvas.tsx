@@ -45,9 +45,6 @@ export function Canvas({ automaton }: { automaton: Automation }) {
       const settings: Settings = {
         animate: true,
         pixelated: true,
-        // resizeCanvas: false,
-        // scaleToFit: false,
-        // scaleToView: true,
         dimensions: [automaton.width, automaton.height],
         canvas: ref.current,
       };
