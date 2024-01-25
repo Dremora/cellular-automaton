@@ -4,7 +4,13 @@ import { useCallback, useEffect, useRef } from 'react';
 import { canvasStyle } from './canvas.css';
 import { Automation } from './automaton';
 
-export function Canvas({ automaton }: { automaton: Automation }) {
+export function Canvas({
+  automaton,
+  fps,
+}: {
+  automaton: Automation;
+  fps: number;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   const sketch = useCallback(
@@ -47,6 +53,8 @@ export function Canvas({ automaton }: { automaton: Automation }) {
         pixelated: true,
         dimensions: [automaton.width, automaton.height],
         canvas: ref.current,
+        fps,
+        playbackRate: 'throttle',
       };
       automaton.init();
       if (manager.current) {
@@ -62,6 +70,6 @@ export function Canvas({ automaton }: { automaton: Automation }) {
         manager.current = canvasSketch(sketch, settings);
       }
     }
-  }, [automaton, sketch]);
+  }, [automaton, fps, sketch]);
   return <canvas ref={ref} className={canvasStyle} />;
 }

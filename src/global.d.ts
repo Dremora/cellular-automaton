@@ -9,6 +9,8 @@ declare module 'canvas-sketch' {
     resizeCanvas?: boolean;
     scaleToFit?: boolean;
     scaleToView?: boolean;
+    playbackRate?: 'throttle' | 'fixed';
+    fps?: number;
   };
   type SketchFunctionProps = {
     context: CanvasRenderingContext2D;
@@ -26,6 +28,7 @@ declare module 'canvas-sketch' {
     unload: () => void;
     destroy: () => void;
     loadAndRun: (sketch: SketchFunction, settings: Settings) => void;
+    settings: Settings;
   };
   const canvasSketch: (
     sketch: () => SketchFunction,

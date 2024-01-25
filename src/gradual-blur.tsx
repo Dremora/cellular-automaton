@@ -1,13 +1,7 @@
-import {
-  Checkbox,
-  InputWrapper,
-  Select,
-  Slider,
-  TextInput,
-} from '@mantine/core';
+import { Checkbox, InputWrapper, Select, Slider } from '@mantine/core';
 import { Automation } from './automaton';
 import { grayscaleHueToRGB, randomInt } from './utils';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export type Operation = 'blur' | 'replace';
 
@@ -43,6 +37,22 @@ export class GradualBlur extends Automation {
     this.monochrome = monochrome;
     this.hue = hue;
     this.data = new Uint8Array(this.width * this.height * (monochrome ? 1 : 3));
+  }
+
+  public setOperation(operation: Operation) {
+    this.operation = operation;
+  }
+
+  public setHue(hue: number) {
+    this.hue = hue;
+  }
+
+  public setIterations(iterations: number) {
+    this.iterations = iterations;
+  }
+
+  public setMonochrome(monochrome: boolean) {
+    this.monochrome = monochrome;
   }
 
   override step() {
@@ -122,54 +132,132 @@ export class GradualBlur extends Automation {
   }
 }
 
-export function useConfig() {
-  const [width, setWidth] = useState(1000);
-  const [height, setHeight] = useState(1000);
-  const [iterations, setIterations] = useState(10000);
-  const [operation, setOperation] = useState<Operation>('replace');
-  const [monochrome, setMonochrome] = useState(false);
-  const [hue, setHue] = useState(0);
+export function useConfig({
+  width,
+  height,
+}: {
+  width: number;
+  height: number;
+}) {
+  const iterationsRef = useRef(10000);
+  const [iterations, setIterations] = useState(iterationsRef.current);
+
+  const operationRef = useRef<Operation>('replace');
+  const [operation, setOperation] = useState<Operation>(operationRef.current);
+
+  const monochromeRef = useRef(false);
+  const [monochrome, setMonochrome] = useState(monochromeRef.current);
+
+  const hueRef = useRef(0);
+  const [hue, setHue] = useState(hueRef.current);
+
+  const [automaton, setAutomaton] = useState(() => {
+    return new GradualBlur({
+      width,
+      height,
+      hue: hueRef.current,
+      iterations: iterationsRef.current,
+      monochrome: monochromeRef.current,
+      operation: operationRef.current,
+    });
+  });
+
+  const updateHue = useCallback(
+    (hue: number) => {
+      setHue(hue);
+      automaton.setHue(hue);
+      hueRef.current = hue;
+    },
+    [automaton]
+  );
+
+  const updateIterations = useCallback(
+    (iterations: number) => {
+      setIterations(iterations);
+      automaton.setIterations(iterations);
+      iterationsRef.current = iterations;
+    },
+    [automaton]
+  );
+
+  const updateMonochrome = useCallback(
+    (monochrome: boolean) => {
+      setMonochrome(monochrome);
+      automaton.setMonochrome(monochrome);
+      monochromeRef.current = monochrome;
+    },
+    [automaton]
+  );
+
+  const updateOperation = useCallback(
+    (operation: Operation) => {
+      setOperation(operation);
+      automaton.setOperation(operation);
+      operationRef.current = operation;
+    },
+    [automaton]
+  );
+
+  useEffect(() => {
+    setAutomaton(
+      new GradualBlur({
+        width,
+        height,
+        iterations: iterationsRef.current,
+        operation: operationRef.current,
+        monochrome: monochromeRef.current,
+        hue: hueRef.current,
+      })
+    );
+  }, [height, width]);
+
   const node = useMemo(
     () => (
       <>
-        <TextInput
-          placeholder="200"
-          label="Width"
-          value={width}
-          type="number"
-          onChange={(e) => setWidth(+e.currentTarget.value)}
-        />
-        <TextInput
-          placeholder="200"
-          label="Height"
-          value={height}
-          type="number"
-          onChange={(e) => setHeight(+e.currentTarget.value)}
-        />
-        <TextInput
-          placeholder="100"
-          label="Iterations"
-          value={iterations}
-          type="number"
-          onChange={(e) => setIterations(+e.currentTarget.value)}
-        />
+        <InputWrapper label="Iterations (per frame)">
+          <Slider
+            mb="lg"
+            min={0}
+            max={6}
+            step={0.0001}
+            precision={4}
+            value={Math.log10(iterations)}
+            onChange={(value) =>
+              updateIterations(Math.round(Math.pow(10, value)))
+            }
+            scale={(x) => Math.round(Math.pow(10, x))}
+            marks={[
+              { value: 0, label: '0' },
+              {
+                value: 6,
+                label: (
+                  <span style={{ position: 'absolute', right: 0 }}>
+                    1,000,000
+                  </span>
+                ),
+              },
+            ]}
+          />
+        </InputWrapper>
         <InputWrapper label="Operation">
           <Select
             data={['blur', 'replace']}
             value={operation}
-            onChange={(operation) => setOperation(operation as Operation)}
+            onChange={(operation) => updateOperation(operation as Operation)}
           />
         </InputWrapper>
         <Checkbox
           label="Monochrome"
           checked={monochrome}
-          onChange={() => setMonochrome(!monochrome)}
+          onChange={() => updateMonochrome(!monochrome)}
         />
         {monochrome && (
           <InputWrapper label="Hue">
             <Slider
+              mb="lg"
               min={0}
               max={359}
+              showLabelOnHover={false}
               marks={[
                 { value: 0, label: 'Red' },
                 { value: 60, label: 'Yellow' },
@@ -180,25 +268,23 @@ export function useConfig() {
                 { value: 360, label: 'Red' },
               ]}
               value={hue}
-              onChange={setHue}
+              onChange={updateHue}
             />
           </InputWrapper>
         )}
       </>
     ),
-    [width, height, iterations, operation, monochrome, hue]
+    [
+      hue,
+      iterations,
+      monochrome,
+      operation,
+      updateHue,
+      updateIterations,
+      updateMonochrome,
+      updateOperation,
+    ]
   );
 
-  const config = useMemo(() => {
-    return {
-      width,
-      height,
-      iterations,
-      operation,
-      monochrome,
-      hue,
-    };
-  }, [width, height, iterations, operation, monochrome, hue]);
-
-  return useMemo(() => ({ config, node }), [config, node]);
+  return useMemo(() => ({ automaton, node }), [automaton, node]);
 }
