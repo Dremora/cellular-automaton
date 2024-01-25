@@ -185,6 +185,7 @@ export function useConfig({
       setMonochrome(monochrome);
       automaton.setMonochrome(monochrome);
       monochromeRef.current = monochrome;
+      automaton.init();
     },
     [automaton]
   );
