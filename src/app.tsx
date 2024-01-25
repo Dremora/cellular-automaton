@@ -2,7 +2,6 @@ import '@mantine/core/styles.css';
 
 import {
   ActionIcon,
-  AppShell,
   Button,
   Flex,
   Group,
@@ -17,6 +16,7 @@ import { Canvas } from './canvas';
 import { theme } from './theme';
 import { useConfig } from './gradual-blur';
 import { useCallback, useState } from 'react';
+import { appShellStyle, sidebarStyle } from './app.css';
 
 export default function App() {
   const [width, setWidth] = useState(1000);
@@ -35,15 +35,8 @@ export default function App() {
 
   return (
     <MantineProvider defaultColorScheme="dark" theme={theme}>
-      <AppShell
-        transitionDuration={500}
-        transitionTimingFunction="ease"
-        navbar={{
-          width: 350,
-          breakpoint: 'sm',
-        }}
-      >
-        <AppShell.Navbar p="md">
+      <Flex className={appShellStyle}>
+        <Stack p="md" justify="space-between" className={sidebarStyle}>
           <Stack gap="md">
             <Group justify="space-between">
               <Popover width={200} position="bottom" withArrow shadow="md">
@@ -98,7 +91,6 @@ export default function App() {
           </Stack>
 
           <ActionIcon
-            mt="auto"
             color="#24292f"
             component="a"
             href="https://github.com/Dremora/cellular-automaton"
@@ -121,14 +113,12 @@ export default function App() {
               />
             </svg>
           </ActionIcon>
-        </AppShell.Navbar>
+        </Stack>
 
-        <AppShell.Main display="flex">
-          <Flex direction="column" flex="1" pos="relative">
-            <Canvas automaton={automaton} fps={fps} />
-          </Flex>
-        </AppShell.Main>
-      </AppShell>
+        <Flex direction="column" flex="1" pos="relative">
+          <Canvas automaton={automaton} fps={fps} />
+        </Flex>
+      </Flex>
     </MantineProvider>
   );
 }
