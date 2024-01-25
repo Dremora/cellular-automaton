@@ -1,4 +1,4 @@
-import { Checkbox, InputWrapper, Select, Slider } from '@mantine/core';
+import { Checkbox, InputWrapper, Select, Slider, Text } from '@mantine/core';
 import { Automation } from './automaton';
 import { grayscaleHueToRGB, randomInt } from './utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -287,5 +287,20 @@ export function useConfig({
     ]
   );
 
-  return useMemo(() => ({ automaton, node }), [automaton, node]);
+  const helpNode = useMemo(() => {
+    return (
+      <Text size="xs">
+        This automaton populates grid with pixels of random color. At each tick,
+        it picks a random pixel and updates the color of its neighbors to be the
+        same as the color of the central pixel (or with the blur effect on, the
+        average of the central pixel and the neighbor). This is repeated{' '}
+        <code>iteration</code> times per frame.
+      </Text>
+    );
+  }, []);
+
+  return useMemo(
+    () => ({ automaton, node, helpNode }),
+    [automaton, helpNode, node]
+  );
 }

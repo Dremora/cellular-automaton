@@ -5,8 +5,10 @@ import {
   AppShell,
   Button,
   Flex,
+  Group,
   InputWrapper,
   MantineProvider,
+  Popover,
   Slider,
   Stack,
   TextInput,
@@ -22,12 +24,12 @@ export default function App() {
 
   const [fps, setFps] = useState(60);
 
-  const { automaton, node } = useConfig({
+  const { automaton, node, helpNode } = useConfig({
     width,
     height,
   });
 
-  const resetAutomaton = useCallback(() => {
+  const restartAnimation = useCallback(() => {
     automaton.init();
   }, [automaton]);
 
@@ -43,20 +45,42 @@ export default function App() {
       >
         <AppShell.Navbar p="md">
           <Stack gap="md">
-            <TextInput
-              placeholder="200"
-              label="Width"
-              value={width}
-              type="number"
-              onChange={(e) => setWidth(+e.currentTarget.value)}
-            />
-            <TextInput
-              placeholder="200"
-              label="Height"
-              value={height}
-              type="number"
-              onChange={(e) => setHeight(+e.currentTarget.value)}
-            />
+            <Group justify="space-between">
+              <Popover width={200} position="bottom" withArrow shadow="md">
+                <Popover.Target>
+                  <ActionIcon
+                    mt="auto"
+                    color="yellow"
+                    aria-label="Help"
+                    style={{ borderRadius: '50%' }}
+                  >
+                    ?
+                  </ActionIcon>
+                </Popover.Target>
+                <Popover.Dropdown w="300px">{helpNode}</Popover.Dropdown>
+              </Popover>
+              <Button size="compact-sm" onClick={restartAnimation}>
+                Restart
+              </Button>
+            </Group>
+            <Group>
+              <TextInput
+                placeholder="200"
+                label="Width"
+                value={width}
+                type="number"
+                onChange={(e) => setWidth(+e.currentTarget.value)}
+                flex="1 1"
+              />
+              <TextInput
+                placeholder="200"
+                label="Height"
+                value={height}
+                type="number"
+                onChange={(e) => setHeight(+e.currentTarget.value)}
+                flex="1 1"
+              />
+            </Group>
             <InputWrapper label="FPS">
               <Slider
                 mb="lg"
@@ -71,7 +95,6 @@ export default function App() {
               />
             </InputWrapper>
             {node}
-            <Button onClick={resetAutomaton}>Reset</Button>
           </Stack>
 
           <ActionIcon
